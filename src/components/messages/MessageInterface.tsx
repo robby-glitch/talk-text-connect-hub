@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,17 +16,23 @@ type MessageInterfaceProps = {
   contactName: string;
   contactNumber: string;
   initialMessages?: Message[];
+  onSendMessage?: (message: string) => void;
 };
 
 const MessageInterface = ({ 
   contactName, 
   contactNumber,
-  initialMessages = [] 
+  initialMessages = [],
+  onSendMessage
 }: MessageInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,6 +45,12 @@ const MessageInterface = ({
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
     
+    if (onSendMessage) {
+      onSendMessage(newMessage);
+      setNewMessage('');
+      return;
+    }
+    
     const message: Message = {
       id: Date.now().toString(),
       content: newMessage,
@@ -50,7 +61,6 @@ const MessageInterface = ({
     setMessages(prev => [...prev, message]);
     setNewMessage('');
     
-    // Simulate reply after a short delay
     setTimeout(() => {
       const reply: Message = {
         id: (Date.now() + 1).toString(),

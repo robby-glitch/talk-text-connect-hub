@@ -15,6 +15,8 @@ import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import MainLayout from "./components/layout/MainLayout";
 
+import "./styles.css"; // Import custom styles
+
 const queryClient = new QueryClient();
 
 const App = () => {
