@@ -1,7 +1,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { corsHeaders } from '../_shared/cors.ts'
-import { twilio } from 'https://esm.sh/twilio@4.25.0'
+import { Twilio } from 'https://esm.sh/@twilio/twilio-js@1.0.0'
 
 // Get Supabase client
 const supabaseUrl = 'https://mlttglkptuhwmscmlaau.supabase.co'
@@ -14,7 +14,7 @@ const authToken = Deno.env.get('TWILIO_AUTH_TOKEN') || ''
 const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || ''
 
 // Initialize Twilio client
-const twilioClient = twilio(accountSid, authToken)
+const twilioClient = new Twilio(accountSid, authToken)
 
 Deno.serve(async (req) => {
   // Handle CORS preflight request
