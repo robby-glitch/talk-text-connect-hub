@@ -1,6 +1,6 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { corsHeaders } from '../_shared/cors.ts'
-import twilio from 'https://esm.sh/twilio@4.11.0' 
 
 // Get Supabase client
 const supabaseUrl = 'https://mlttglkptuhwmscmlaau.supabase.co'
@@ -12,8 +12,35 @@ const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID') || ''
 const authToken = Deno.env.get('TWILIO_AUTH_TOKEN') || ''
 const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER') || ''
 
-// Initialize Twilio client
-const twilioClient = twilio(accountSid, authToken)
+// Base URL for Twilio API
+const twilioBaseUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}`
+
+// Helper function to make authenticated requests to Twilio API
+async function twilioRequest(endpoint: string, method = 'GET', data?: Record<string, string>) {
+  const url = `${twilioBaseUrl}${endpoint}`
+  const headers = new Headers({
+    'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+    'Content-Type': method === 'POST' ? 'application/x-www-form-urlencoded' : 'application/json',
+  })
+
+  const options: RequestInit = { method, headers }
+  
+  if (method === 'POST' && data) {
+    const formData = new URLSearchParams()
+    Object.entries(data).forEach(([key, value]) => {
+      formData.append(key, value)
+    })
+    options.body = formData
+  }
+
+  const response = await fetch(url, options)
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Twilio API error: ${response.status} ${error}`)
+  }
+  
+  return response.json()
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight request
@@ -48,17 +75,21 @@ Deno.serve(async (req) => {
     // Routing based on path and method
     if (path === 'calls' && req.method === 'GET') {
       // Get call history
-      const calls = await twilioClient.calls.list({ limit: 20 })
+      console.log('Fetching calls from Twilio API')
+      const callsData = await twilioRequest('/Calls.json?PageSize=20')
+      
       return new Response(
-        JSON.stringify({ calls: calls.map(call => ({
-          id: call.sid,
-          direction: call.direction,
-          status: call.status,
-          from: call.from,
-          to: call.to,
-          duration: call.duration,
-          date: call.dateCreated
-        }))}),
+        JSON.stringify({ 
+          calls: callsData.calls.map((call: any) => ({
+            id: call.sid,
+            direction: call.direction,
+            status: call.status,
+            from: call.from,
+            to: call.to,
+            duration: call.duration,
+            date: call.date_created
+          }))
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     } 
@@ -72,33 +103,38 @@ Deno.serve(async (req) => {
         )
       }
 
-      const call = await twilioClient.calls.create({
-        to,
-        from: twilioPhoneNumber,
-        url: 'http://demo.twilio.com/docs/voice.xml', // TwiML instructions for the call
+      console.log(`Making call to ${to} from ${twilioPhoneNumber}`)
+      const callData = await twilioRequest('/Calls.json', 'POST', {
+        To: to,
+        From: twilioPhoneNumber,
+        Url: 'http://demo.twilio.com/docs/voice.xml',
       })
 
       return new Response(
         JSON.stringify({ 
-          id: call.sid,
-          status: call.status 
+          id: callData.sid,
+          status: callData.status 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     } 
     else if (path === 'messages' && req.method === 'GET') {
       // Get message history
-      const messages = await twilioClient.messages.list({ limit: 20 })
+      console.log('Fetching messages from Twilio API')
+      const messagesData = await twilioRequest('/Messages.json?PageSize=20')
+      
       return new Response(
-        JSON.stringify({ messages: messages.map(message => ({
-          id: message.sid,
-          direction: message.direction === 'inbound' ? 'contact' : 'user',
-          body: message.body,
-          from: message.from,
-          to: message.to,
-          status: message.status,
-          date: message.dateCreated
-        }))}),
+        JSON.stringify({ 
+          messages: messagesData.messages.map((message: any) => ({
+            id: message.sid,
+            direction: message.direction === 'inbound' ? 'contact' : 'user',
+            body: message.body,
+            from: message.from,
+            to: message.to,
+            status: message.status,
+            date: message.date_created
+          }))
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     } 
@@ -112,16 +148,17 @@ Deno.serve(async (req) => {
         )
       }
 
-      const message = await twilioClient.messages.create({
-        to,
-        from: twilioPhoneNumber,
-        body
+      console.log(`Sending message to ${to} from ${twilioPhoneNumber}`)
+      const messageData = await twilioRequest('/Messages.json', 'POST', {
+        To: to,
+        From: twilioPhoneNumber,
+        Body: body
       })
 
       return new Response(
         JSON.stringify({ 
-          id: message.sid,
-          status: message.status 
+          id: messageData.sid,
+          status: messageData.status 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
