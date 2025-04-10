@@ -1,21 +1,13 @@
 
-import { useState } from "react";
-import AuthForm from "@/components/auth/AuthForm";
-import MainLayout from "@/components/layout/MainLayout";
 import { Navigate } from "react-router-dom";
+import AuthForm from "@/components/auth/AuthForm";
+import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isLoading } = useAuth();
   
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-  
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
-  
-  if (isAuthenticated) {
+  // If authenticated, redirect to calls page
+  if (user && !isLoading) {
     return <Navigate to="/calls" replace />;
   }
   
@@ -34,7 +26,7 @@ const Index = () => {
           </p>
         </div>
         
-        <AuthForm onSuccess={handleLogin} />
+        <AuthForm />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import { AuthProvider } from "./context/AuthContext";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -18,70 +18,66 @@ import MainLayout from "./components/layout/MainLayout";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
-  
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            
-            <Route 
-              path="/calls" 
-              element={
-                <MainLayout onLogout={handleLogout}>
-                  <CallsPage />
-                </MainLayout>
-              } 
-            />
-            
-            <Route 
-              path="/messages" 
-              element={
-                <MainLayout onLogout={handleLogout}>
-                  <MessagesPage />
-                </MainLayout>
-              } 
-            />
-            
-            <Route 
-              path="/contacts" 
-              element={
-                <MainLayout onLogout={handleLogout}>
-                  <ContactsPage />
-                </MainLayout>
-              } 
-            />
-            
-            <Route 
-              path="/history" 
-              element={
-                <MainLayout onLogout={handleLogout}>
-                  <HistoryPage />
-                </MainLayout>
-              } 
-            />
-            
-            <Route 
-              path="/settings" 
-              element={
-                <MainLayout onLogout={handleLogout}>
-                  <SettingsPage />
-                </MainLayout>
-              } 
-            />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              
+              <Route 
+                path="/calls" 
+                element={
+                  <MainLayout>
+                    <CallsPage />
+                  </MainLayout>
+                } 
+              />
+              
+              <Route 
+                path="/messages" 
+                element={
+                  <MainLayout>
+                    <MessagesPage />
+                  </MainLayout>
+                } 
+              />
+              
+              <Route 
+                path="/contacts" 
+                element={
+                  <MainLayout>
+                    <ContactsPage />
+                  </MainLayout>
+                } 
+              />
+              
+              <Route 
+                path="/history" 
+                element={
+                  <MainLayout>
+                    <HistoryPage />
+                  </MainLayout>
+                } 
+              />
+              
+              <Route 
+                path="/settings" 
+                element={
+                  <MainLayout>
+                    <SettingsPage />
+                  </MainLayout>
+                } 
+              />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

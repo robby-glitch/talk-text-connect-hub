@@ -4,16 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type AuthFormProps = {
-  onSuccess: () => void;
-};
-
-const AuthForm = ({ onSuccess }: AuthFormProps) => {
+const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { signIn, signUp, isLoading } = useAuth();
+  const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -30,26 +28,20 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
     
     try {
-      // This would normally connect to your auth system
-      // For now, we'll simulate successful authentication
-      setTimeout(() => {
-        setLoading(false);
-        toast({
-          title: isLogin ? "Logged in successfully" : "Account created successfully",
-          description: "Welcome to Talk Connect Hub",
-        });
-        onSuccess();
-      }, 1000);
+      if (isLogin) {
+        await signIn(formData.email, formData.password);
+      } else {
+        await signUp(formData.email, formData.password, formData.name);
+      }
     } catch (error) {
-      setLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Authentication failed",
-        description: "Please check your credentials and try again.",
-      });
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     }
   };
   
@@ -66,6 +58,12 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div className="space-y-2">
@@ -103,8 +101,8 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
               onChange={handleChange}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Processing..." : isLogin ? "Login" : "Sign Up"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Processing..." : isLogin ? "Login" : "Sign Up"}
           </Button>
         </form>
       </CardContent>
